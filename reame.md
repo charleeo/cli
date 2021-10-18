@@ -1,0 +1,1 @@
+visit https://blog.logrocket.com/node-js-express-js-mysql-rest-api-example/
