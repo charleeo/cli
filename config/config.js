@@ -1,17 +1,42 @@
-require('dotenv').config();
-const mysql = require('mysql2')
-
-const config = {
-    db:{
-        DB_PASSWORD :process.env.DB_PASSWORD,
-        DB_USER : process.env.DB_USER,
-        DB_DATABASE : process.env.DB_DATABASE,
-        DB_HOST : process.env.DB_HOST,
-        PORT : process.env.PORT || 8000,
-        connectionLimits  : process.env.MYSQL_CONNECTION_LIMITS,
-
-    },
-    listPerPage: env.LIST_PER_PAGE || 10,
-}
-
-module.exports= config
+require('dotenv').config()
+const fs = require('fs')
+module.exports = {
+  development: {
+    username: process.env.DB_USERNAME,
+    password: process.env.DB_PASSWORD,
+    database: process.env.DB_DATABASE,
+    host: process.env.DB_HOST,
+    port: 3306,
+    dialect: 'mysql',
+    dialectOptions: {
+      bigNumberStrings: true
+    }
+  },
+  test: {
+    username: process.env.CI_DB_USERNAME,
+    password: process.env.CI_DB_PASSWORD,
+    database: process.env.CI_DB_NAME,
+    host: '127.0.0.1',
+    port: 3306,
+    dialect: 'mysql',
+    dialectOptions: {
+      bigNumberStrings: true
+    }
+  },
+  production: {
+    username: process.env.PROD_DB_USERNAME,
+    password: process.env.PROD_DB_PASSWORD,
+    database: process.env.PROD_DB_NAME,
+    host: process.env.PROD_DB_HOSTNAME,
+    port: process.env.PROD_DB_PORT,
+    dialect: 'mysql',
+    dialectOptions: {
+      bigNumberStrings: true,
+      // ssl: {
+      //   ca: fs.readFileSync(__dirname + '/mysql-ca-master.crt')
+      // }
+    }
+  },
+  PORT: process.env.PORT || 8500,
+  jwt_secrete : process.env.JWT_SECRETE
+};

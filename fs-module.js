@@ -1,5 +1,5 @@
 const fs = require('fs')
-const migration = require('./config/schema/migarion')
+const migration = require('./config2/schema/migarion')
 
 const wr = (file,con)=>{
     const  path = './database/migration';
