@@ -5,36 +5,69 @@ const Joi = require('joi')
 const secrete = require('../../config/config').jwt_secrete
 const port = require('../../config/config').PORT
 const mailObject = require('../../helpers/helpers')
-const {emailVerificationObject,forgotPasswordObjects }  = require( '../../helpers/mailObjects')
+const logUtils = require('../../logutils')
+const {emailVerificationObject,forgotPasswordObjects }  = require( '../../helpers/mailObjects');
+const { json } = require('body-parser');
 const {text,html,subject} = emailVerificationObject
 const {textF,htmlF,subjectF} = forgotPasswordObjects
 
 const UserController ={
-  async getAllUsers(req,res){
-    try {
-      const users = await models.User.findAll({attributes:['email','name','id']});
-      if(!users){
-          return res.status(404).json({message:"No user is found"})
-      }
-      return res.status(200).json(users);
-  } catch (error) {
-      res.status(500).json({error})
-  }
-   },
-
-  async  getAUser(req,res){
-    const id = req.params.id
-    try{
-        const user = await models.User.findOne({where:{id}, attributes:['email','name','id','createdAt']});
-        if(!user){
-            return res.status(404).json({message:"No user is found with " +id})
+        async getAllUsers(req,res){
+          let  status  = false;
+          let statusCode = 200
+          let responseData = null;
+          let message = ""
+          let error =null
+            try {
+            const users = await models.User.findAll({attributes:['email','name','id']});
+            if(users){
+                status = true
+                message = "Records fetched"
+                responseData = users
+            }else message="No record found"
+        } catch (err) {
+            message = "There  is a server error"
+            statusCode = 500
+            error = err.message 
         }
-        return res.status(200).json(user)
-    }catch (error) { res.status(500).json({error})  }
-   },
+        logUtils.logData(error? error:responseData,req,res,message,statusCode,status)
+        res.status(statusCode).json({ status, responseData, message })
+    },
+    
+    async getAUser(req,res){
+        const id = req.params.id
+        let  status  = false;
+        let statusCode = 200
+        let responseData = null;
+        let message = ""
+        let error =null
+        try{
+            const user = await models.User.findOne({where:{id}, attributes:['email','name','id','createdAt']});
+            if(user){
+                message="User found"
+                responseData = user
+                status = true 
+            }
+            else message ="No user is found with this ID " +id            
+        }catch (err) {
+            message = "There  is a server error"
+            statusCode = 500
+            error = err.message 
+        }
+        
+        logUtils.logData(error? error:responseData,req,res,message,statusCode,status)
+        res.status(statusCode).json({ status, responseData, message })
+    },
 
    async registerUser(req,res){
-     const {name,email,password} = req.body
+    let  status  = false;
+    let statusCode = 201
+    let responseData = null;
+    let message = ""
+    let result =null
+    error = null
+    
+    const {name,email,password} = req.body
      const schema = Joi.object({
       name: Joi.string()
           .min(3)
@@ -45,51 +78,84 @@ const UserController ={
           .pattern(new RegExp('^[a-zA-Z0-9]{3,30}$')).min(6),
       email: Joi.string() .email({ minDomainSegments: 2, tlds: { allow: ['com', 'net','info','ng'] } }).required()
   })
-  const {error,value}= schema.validate({ name,email,password});
-  if(error){
-    return res.status(400).json({
-         error: error.details[0].message
-     })
-    } 
-
-    const checkUser= await models.User.findOne({where:{email}});
-    if(checkUser){
-        return  res.status(409).json({error:"Email already exists!"} );
+  try {
+      const {error,value}= schema.validate({ name,email,password});
+      const checkUser= await models.User.findOne({where:{email}});
+     
+      if(error){
+            message = error.details[0].message
+            statusCode  = 400
+        } 
+    
+        else if(checkUser){
+            statusCode = 409
+            message = `User with this ${email} already exists`
+        }else{
+        const salt = await bcryptjs.genSalt(10);
+        const hash= await bcryptjs.hash(password, salt);
+        const user = { name, email, password: hash }
+        result =  await models.User.create(user)
+        if(result){
+            responseData = result
+            message = "Account created successfully"
+            status = true
+        }else message="Could create a user"
     }
-    const salt = await bcryptjs.genSalt(10);
-    const hash= await bcryptjs.hash(password, salt);
-    const user = { name, email, password: hash }
+    
+    } catch (err) {
+        message = "There  is a server error"
+        statusCode = 500
+        error = err.message 
+    }
+    logUtils.logData(error? error:responseData,req,res,message,statusCode,status)
     const token = jwt.sign({email}, secrete,{expiresIn:"2days"})
-    const result =  await models.User.create(user)
-    res.status(201).json({
-        message: "User created successfully",
-        result:result
-    });
-    /**Send mail to registered users */
     const url = `http://127.0.0.1:${port}/user/verify-account/${email}/${token}`
-    await mailObject.sendMail(email,url,subject,text,html)
+    res.status(statusCode).json({ status, responseData, message })
+    /**Send mail to registered users  */
+    if(result) await mailObject.sendMail(email,url,subject,text,html)
    },
+
+
    async  login(req, res){
+    let  status  = false;
+    let statusCode = 201
+    let responseData = null;
+    let message = ""
+    error = null
       const {email,password}= req.body;
       try{      
       if(!email || !password){
-          return res.status(400).json({
-              error: "Please ensure that all fields are filled"
-          })
+           stat=400
+           message= "Please ensure that all fields are filled"
       }
+
       const user = await models.User.findOne({where:{email}});
       if(user === null){
-          return  res.status(400).json({error:"Invalid credential "});
+          statusCode =400
+          message="Invalid credential ";
       }  
       const validPassword = await bcryptjs.compare(password, user.password); 
-      if(!validPassword){return res.status(400).send({error:"Invalid credentials"})}
-      const token =  jwt.sign({userId: user.id, email,name:user.name},secrete,{expiresIn:'2days'});
-      delete user.password
-      console.log(user.password)
-      res.header('auth-token', token).json({message:"Login was successfull",token,user}) 
-      }catch(error){
-          res.status(500).json(error)
+      if(!validPassword){
+          statusCode=400
+          message="Invalid credentials"
+     }
+     if(!message){
+         const token =  jwt.sign({userId: user.id, email,name:user.name},secrete,{expiresIn:'2days'});
+         message="Login was successfull"
+         status = true
+         responseData = {token:token,user:{email:user.email,name:user.name,id:user.id}}
+     }else{
+        message=message
+        statusCode= statusCode 
+     }
+      
+      }catch(err){
+          statusCode= 500
+          error=err.message
+          message="There is a server error"
       }
+      logUtils.logData(error? error:responseData,req,res,message,statusCode,status)
+      res.status(statusCode).json({ status, responseData, message })
   }
 }
 
