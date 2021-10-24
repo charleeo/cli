@@ -28,14 +28,60 @@ const transporter  = nodemailer.createTransport({
    }
  }
 
- const generateToken=(total)=>{
+ const generateToken=(guid)=>{
    let numberSequence = config.NumberSequence
-   if(total ==0){
-     numberSequence= numberSequence +1
+   if(guid == 0){
+    let  newString = numberSequence.substr(0,numberSequence.length-1)
+     numberSequence  = newString +1
    }else{
-     numberSequence  = total+1
+    // let extractedInteger  = guid.replace(/[^1-9]/g,'')
+    let range= checkRange(guid)
+    let newString = numberSequence.slice(0,( numberSequence.length - range))
+    const increasedValue  = parseInt(guid) + 1
+     numberSequence  =    newString + increasedValue
    }
+
    return numberSequence
+ }
+
+ const checkRange=(number)=>{
+   let numberToInteger = parseInt(number)
+   let range = 0;
+     
+   if(numberToInteger > 0 && numberToInteger < 9){
+     range=1//unit
+   }
+   else if(numberToInteger >= 9 && numberToInteger < 99){
+     range=2//tens
+   }
+   else if(numberToInteger >= 99 && numberToInteger < 999){
+     range=3//hundrendth
+   }
+   else if(numberToInteger >= 999 && numberToInteger < 9999){
+     range=4//units of thousand
+   }
+   else if(numberToInteger >= 9999 && numberToInteger < 99999){
+     range=5//tens of thousands
+   }
+   else if(numberToInteger >= 99999 && numberToInteger < 999999){
+     range=6//hundrenth of thounsand
+   }
+   else if(numberToInteger >= 999999 && numberToInteger < 9999999){
+     range=7//unit of  millions
+   }
+   else if(numberToInteger >= 9999999 && numberToInteger < 99999999){
+     range=8//tens of millions
+   }
+   else if(numberToInteger >= 99999999 && numberToInteger < 999999999){
+     range=9//hundrenth of millions
+   }
+   else if(numberToInteger >= 999999999 &&  numberToInteger < 9999999999){
+     range=10//unit of billions
+   }
+   else if(numberToInteger >= 9999999999 && numberToInteger < 99999999999){
+     range=11//tens of billions
+   }
+   return range
  }
 
  module.exports= {sendMail, generateToken}

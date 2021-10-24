@@ -39,5 +39,5 @@ module.exports = {
   },
   PORT: process.env.PORT || 8500,
   jwt_secrete : process.env.JWT_SECRETE,
-  NumberSequence : "000000000"
+  NumberSequence : "00000000000"
 };
