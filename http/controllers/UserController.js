@@ -7,7 +7,6 @@ const port = require('../../config/config').PORT
 const mailObject = require('../../helpers/helpers')
 const logUtils = require('../../logutils')
 const {emailVerificationObject,forgotPasswordObjects }  = require( '../../helpers/mailObjects');
-const { json } = require('body-parser');
 const {text,html,subject} = emailVerificationObject
 const {textF,htmlF,subjectF} = forgotPasswordObjects
 
@@ -48,7 +47,10 @@ const UserController ={
                 responseData = user
                 status = true 
             }
-            else message ="No user is found with this ID " +id            
+            else {
+                message ="No user is found with this ID " +id   
+                statusCode=404
+            }         
         }catch (err) {
             message = "There  is a server error"
             statusCode = 500

@@ -1,4 +1,5 @@
 const nodemailer = require('nodemailer');
+const config =        require('../config/config')
 const transporter  = nodemailer.createTransport({
   host: "smtp.googlemail.com",
   port: 465,
@@ -27,5 +28,15 @@ const transporter  = nodemailer.createTransport({
    }
  }
 
- module.exports= {sendMail}
+ const generateToken=(total)=>{
+   let numberSequence = config.NumberSequence
+   if(total ==0){
+     numberSequence= numberSequence +1
+   }else{
+     numberSequence  = total+1
+   }
+   return numberSequence
+ }
+
+ module.exports= {sendMail, generateToken}
   // send mail with defined transport object
