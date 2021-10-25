@@ -21,7 +21,7 @@ const path = require('path');
                 Message: message + "\n\r",
                 StatusCode: statusCode,
                 Status: status,
-                StatusMessage: res.statusMessage?res.statusMessage:null,
+                StatusMessage: res.statusMessage
             }
 
             if(!fs.existsSync(path.join(__dirname, 'logs'))){
@@ -29,7 +29,6 @@ const path = require('path');
                     if (err) {
                         console.error(err);
                     }
-                    console.log('Directory created successfully!');
                 });
                
             }
