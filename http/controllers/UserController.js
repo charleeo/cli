@@ -1,4 +1,4 @@
-const models = require('../../models');
+// const models = require('../../models');
 const bcryptjs = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const Joi = require('joi')
@@ -6,7 +6,9 @@ const secrete = require('../../config/config').jwt_secrete
 const port = require('../../config/config').PORT
 const mailObject = require('../../helpers/helpers')
 const logUtils = require('../../logutils')
+const Test = require('../../models/Test')
 const {emailVerificationObject,forgotPasswordObjects }  = require( '../../helpers/mailObjects');
+
 const {text,html,subject} = emailVerificationObject
 const {textF,htmlF,subjectF} = forgotPasswordObjects
 
@@ -18,7 +20,9 @@ const UserController ={
           let message = ""
           let error =null
             try {
-            const users = await models.User.findAll({attributes:['email','name','id']});
+            let TestObject = new Test();
+            let users = await TestObject.fetchAll("users",["*"])
+            // const users = await models.User.findAll({attributes:['email','name','id']});
             if(users){
                 status = true
                 message = "Records fetched"
@@ -135,21 +139,23 @@ const UserController ={
       if(user === null){
           statusCode =400
           message="Invalid credential ";
-      }  
-      const validPassword = await bcryptjs.compare(password, user.password); 
-      if(!validPassword){
-          statusCode=400
-          message="Invalid credentials"
-     }
-     if(!message){
-         const token =  jwt.sign({userId: user.id, email,name:user.name},secrete,{expiresIn:'2days'});
-         message="Login was successfull"
-         status = true
-         responseData = {token:token,user:{email:user.email,name:user.name,id:user.id}}
-     }else{
-        message=message
-        statusCode= statusCode 
-     }
+      } else{
+
+          const validPassword = await bcryptjs.compare(password, user.password); 
+          if(!validPassword){
+              statusCode=400
+              message="Invalid credentials"
+         }
+         if(!message){
+             const token =  jwt.sign({userId: user.id, email,name:user.name},secrete,{expiresIn:'2days'});
+             message="Login was successfull"
+             status = true
+             responseData = {token:token,user:{email:user.email,name:user.name,id:user.id}}
+         }else{
+            message=message
+            statusCode= statusCode 
+         }
+      } 
       
       }catch(err){
           statusCode= 500

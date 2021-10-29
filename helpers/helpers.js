@@ -6,7 +6,8 @@ const transporter  = nodemailer.createTransport({
   auth: {
     user: config.EMAIL_USER,
     pass: config.EMAIL_PASSWORD
-  }
+  },
+  
 });
 
  const sendMail = async(email,url,subject,text,html)=>{
@@ -24,7 +25,7 @@ const transporter  = nodemailer.createTransport({
      console.log("Message sent: %s", JSON.stringify(info));
      return info;
    } catch (error) {
-     console.error(error)
+     console.error("there  was err"+error)
    }
  }
 
