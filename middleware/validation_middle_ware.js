@@ -38,19 +38,19 @@ function validateInputs(req, res, next){
             check('username', 'Username field is required').not().isEmpty(),
             check('password', 'Password field is required').not().isEmpty()
           ],
-          function(req,res,next){
+          function(req,res){
             const errors = validationResult(req);
           if (errors) {
             console.log(errors);
-            res.json('register', { errors: errors.array() });
+            res.status(200).json({ errors: errors.array() });
           }
           else {
             console.log('No Errors');
-            res.json('dashboard', { message: 'Successful Registration.' });
+            res.status(200).json({ message: 'Successful Registration.' });
             }
           }
         
     } catch (error) {
-        
+        console.log(error)
     }
 }
