@@ -1,4 +1,3 @@
-const models = require('../../models');
 const bcryptjs = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const Joi = require('joi')
@@ -7,6 +6,10 @@ const port = require('../../config/config').PORT
 const mailObject = require('../../helpers/helpers')
 const logUtils = require('../../logutils')
 const Test = require('../../models/Test')
+const { check, validationResult } = require('express-validator');
+                            
+
+// const {valid} = require('')
 const {emailVerificationObject,forgotPasswordObjects }  = require( '../../helpers/mailObjects');
 const TestObject = new Test()
 
@@ -161,50 +164,79 @@ const UserController ={
    },
 
 
-//    async  login(req, res){
-//     let  status  = false;
-//     let statusCode = 201
-//     let responseData = null;
-//     let message = ""
-//     error = null
-//       const {email,password}= req.body;
-//       try{      
-//       if(!email || !password){
-//            stat=400
-//            message= "Please ensure that all fields are filled"
-//       }
+   async  login(req, res){
+    let  status  = false;
+    let statusCode = 201
+    let responseData = null;
+    let message = ""
+    error = null
+      const {email,password}= req.body;
+      try{  
+          check('email').isEmail()
+          check('password','Password field is required').notEmpty()    
+    //   if(!email || !password){
+    //        stat=400
+    //        message= "Please ensure that all fields are filled"
+    //   }
 
-//       const user = await models.User.findOne({where:{email}});
-//       if(user === null){
-//           statusCode =400
-//           message="Invalid credential ";
-//       } else{
+    const errors = validationResult({email,password});
+    res.send(errors)
+    return
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    }
 
-//           const validPassword = await bcryptjs.compare(password, user.password); 
-//           if(!validPassword){
-//               statusCode=400
-//               message="Invalid credentials"
-//          }
-//          if(!message){
-//              const token =  jwt.sign({userId: user.id, email,name:user.name},secrete,{expiresIn:'2days'});
-//              message="Login was successfull"
-//              status = true
-//              responseData = {token:token,user:{email:user.email,name:user.name,id:user.id}}
-//          }else{
-//             message=message
-//             statusCode= statusCode 
-//          }
-//       } 
+      const [user] = await TestObject.findOne('email',email);
+     
+      if(!user){
+          statusCode =400
+          message="Invalid credential ";
+      } else{
+
+          const validPassword = await bcryptjs.compare(password, user.password); 
+          if(!validPassword){
+              statusCode=400
+              message="Invalid credentials provided"
+         }
+         if(!message){
+             const token =  jwt.sign({userId: user.id, email,name:user.name},secrete,{expiresIn:'2days'});
+             message="Login was successfull"
+             status = true
+             responseData = {token:token,user:{email:user.email,name:user.name,id:user.id}}
+         }else{
+            message=message
+            statusCode= statusCode 
+         }
+      } 
       
-//       }catch(err){
-//           statusCode= 500
-//           error=err.message
-//           message="There is a server error"
-//       }
-//       logUtils.logData(error? error:responseData,req,res,message,statusCode,status)
-//       res.status(statusCode).json({ status, responseData, message })
-//   }
-
+      }catch(err){
+          statusCode= 500
+          error=err.message
+          message="There is a server error"
+          console.log(err)
+      }
+      logUtils.logData(error? error:responseData,req,res,message,statusCode,status)
+      res.status(statusCode).json({ status, responseData, message })
+  },
+   
+  async getUser(req, res){
+      try {
+          const  {email,name,phone} = req.body
+          if(!email){
+             return res.json('Please provide an email address')
+          }
+          let fields ={
+              email:email,
+              name:  name,
+              password:phone
+          }
+          const  [user] = await TestObject.findWhere(fields)
+          console.log(user)
+          res.json(user)
+      } catch (err) {
+          console.log(err)
+      }
+  }
   
 }
 

@@ -35,7 +35,8 @@ class BaseModel{
      * @param {*} columns 
      * @returns A single if condtion is met and null if condition is n ot met
      */
-    async  findOne(column, firstCondition,  columns=["*"]){
+    async  findOne(column, firstCondition,  columns=["*"])
+    {
         try {
             const [row,fields] = await this.mysql.query(
                 Query.findOne(this.model,columns, column),
@@ -46,13 +47,16 @@ class BaseModel{
             console.log(err)
         }
     }
+
+
     /**
      * 
      * @param {*} id 
      * @param {*} columns 
      * @returns  a  sing le row of the primary key supplied  or null
      */
-    async  findById(id, columns=["*"]){
+    async  findById(id, columns=["*"])
+    {
         
         try {
             const [row,fields] = await this.mysql.query(
@@ -64,8 +68,14 @@ class BaseModel{
             console.log(err)
         }
     }
-
-    async create(data){
+ 
+    /**
+     * 
+     * @param {*} data 
+     * @returns create new resource and return the same to the usr
+     */
+    async create(data)
+    {
          try {
              
            const [result,fields] =  await this.mysql.query(Query.create(this.model,{}),data)
@@ -76,18 +86,47 @@ class BaseModel{
          } catch (err) {
           console.log(err)   
          }
-        }
-        
-        async update(data,column,condition){
-            try {
-                
-             await this.mysql.query(Query.update(this.model,column),[data,condition])
-             return await this.findOne(column,condition) //record that was just updated
-            } catch (err) {
-            console.log(err)   
-            }
-      
     }
+        
+    async update(data,column,condition)
+    {
+        try {
+            
+            await this.mysql.query(Query.update(this.model,column),[data,condition])
+            return await this.findOne(column,condition) //record that was just updated
+        } catch (err) {
+        console.log(err)   
+        }
+    }
+
+    /**
+     * 
+     * @param {*} fields 
+     * @param {*} columns 
+     */
+    async findWhere(fields={},columns =['*'])
+    {
+        let sql =`SELECT ${columns} FROM ${this.model} WHERE `;
+        let i =0;
+        let keys = Object.keys(fields)
+        let values = Object.values(fields)
+        let condition = `AND`;
+        
+        for(i; i < keys.length;i++ ){
+            sql += `${keys[i]} = "${values[i]}" AND `
+        }
+        sql = sql.substr(0,sql.length-condition.length-1)
+
+        const [row,field] = await this.mysql.query(sql)
+        return row;
+    }
+
+    async getResult(column1,column2)
+    {
+        return await this.findWhere(column1,column2)
+    }
+    
 }
+
 
 module.exports= BaseModel
