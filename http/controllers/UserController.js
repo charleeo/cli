@@ -5,15 +5,13 @@ const secrete = require('../../config/config').jwt_secrete
 const port = require('../../config/config').PORT
 const mailObject = require('../../helpers/helpers')
 const logUtils = require('../../logutils')
-const Test = require('../../models/Test')
-const { check, validationResult } = require('express-validator');
-                            
+const User = require('../../models/User')
 
-// const {valid} = require('')
 const {emailVerificationObject,forgotPasswordObjects }  = require( '../../helpers/mailObjects');
-const TestObject = new Test()
+const UserObject = new User()
 
 const {text,html,subject} = emailVerificationObject
+
 const {textF,htmlF,subjectF} = forgotPasswordObjects
 
 const UserController ={
@@ -24,7 +22,7 @@ const UserController ={
           let message = ""
           let error =null
             try {
-            let users = await TestObject.fetchAll()
+            let users = await UserObject.fetchAll()
             // const users = await models.User.findAll({attributes:['email','name','id']});
             if(users){
                 status = true
@@ -48,7 +46,7 @@ const UserController ={
         let message = ""
         let error =null
         try{
-            const user = await TestObject.findById(id);
+            const user = await UserObject.findById(id);
             if(user.length >0){
                 message="User found"
                 responseData = user
@@ -78,7 +76,7 @@ const UserController ={
         const id = req.params.id
         try{
             const {name,email,role_id,password} = req.body
-            let [userInfo] = await TestObject.findOne('id',id)
+            let [userInfo] = await UserObject.findOne('id',id)
             
             const values = {
                 name:name?name:userInfo.name,
@@ -86,7 +84,7 @@ const UserController ={
                 password:password?password:userInfo.password,
                 role_id:role_id?role_id:userInfo.role_id
             }
-            const user = await TestObject.update(values,'id',id);
+            const user = await UserObject.update(values,'id',id);
             if(user){
                 message="User updated successfully"
                 responseData = user
@@ -128,7 +126,7 @@ const UserController ={
   try {
       const {error,value}= schema.validate({ name,email,password});
       
-      const checkUser = await TestObject.findOne("email",email);
+      const checkUser = await UserObject.findOne("email",email);
     
       if(error){
             message = error.details[0].message
@@ -142,7 +140,7 @@ const UserController ={
         const salt = await bcryptjs.genSalt(10);
         const hash= await bcryptjs.hash(password, salt);
         const user = { name, email, password: hash, role_id}
-        result =  await TestObject.create(user)
+        result =  await UserObject.create(user)
         if(result){
             responseData = result
             message = "Account created successfully"
@@ -172,21 +170,19 @@ const UserController ={
     error = null
       const {email,password}= req.body;
       try{  
-          check('email').isEmail()
-          check('password','Password field is required').notEmpty()    
+          body('email').isEmail().normalizeEmail()
+          body('password').not().isEmpty()    
     //   if(!email || !password){
     //        stat=400
     //        message= "Please ensure that all fields are filled"
     //   }
 
-    const errors = validationResult({email,password});
-    res.send(errors)
-    return
+    const errors = validationResult(req);
     if (!errors.isEmpty()) {
       return res.status(400).json({ errors: errors.array() });
     }
 
-      const [user] = await TestObject.findOne('email',email);
+      const [user] = await UserObject.findOne('email',email);
      
       if(!user){
           statusCode =400
@@ -230,7 +226,7 @@ const UserController ={
               name:  name,
               password:phone
           }
-          const  [user] = await TestObject.findWhere(fields)
+          const  [user] = await UserObject.findWhere(fields)
           console.log(user)
           res.json(user)
       } catch (err) {
