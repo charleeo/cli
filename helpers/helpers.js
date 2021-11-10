@@ -3,6 +3,7 @@ const config =        require('../config/config')
 const transporter  = nodemailer.createTransport({
   host: config.EMAIL_HOST,
   port: config.EMAIL_PORT,
+  secure:false,
   auth: {
     user: config.EMAIL_USER,
     pass: config.EMAIL_PASSWORD
@@ -25,7 +26,7 @@ const transporter  = nodemailer.createTransport({
      console.log("Message sent: %s", JSON.stringify(info));
      return info;
    } catch (error) {
-     console.error("there  was err"+error)
+     console.error(error)
    }
  }
 
@@ -85,5 +86,26 @@ const transporter  = nodemailer.createTransport({
    return range
  }
 
- module.exports= {sendMail, generateToken}
+ const getCurrentDate=()=>
+ {
+  let date_ob = new Date();
+
+  // current date
+  // adjust 0 before single digit date
+  let day = ("0" + date_ob.getDate()).slice(-2);
+  
+  // current month
+  let month = ("0" + (date_ob.getMonth() + 1)).slice(-2);
+  let minute = date_ob.getMinutes()
+  let hour  = date_ob.getHours()
+  let seconds  = date_ob.getSeconds()
+  let millSeconds = date_ob.getMilliseconds()
+  
+  // current year
+  let year = date_ob.getFullYear();
+  const date  = `${year}-${month}-${day} ${hour}:${minute}:${seconds}`
+  return date
+ }
+
+ module.exports= {sendMail, generateToken,getCurrentDate}
   // send mail with defined transport object

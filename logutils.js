@@ -52,6 +52,44 @@ const path = require('path');
                  return;
                })
             }
+        },
+
+        logErrors(error){
+            let err = error.stack
+            let emptyCheck = true
+            let  logPath = 'logs'
+            let  extension = '.txt'
+            let file =  "log-"+ getDate()
+            const fullPath = `${logPath}/${file}${extension}`
+            
+            if(!fs.existsSync(path.join(__dirname, 'logs'))){
+                fs.mkdir(path.join(__dirname, 'logs'), (err) => {
+                    if (err) {
+                        console.error(err);
+                    }
+                });
+               
+            }
+   
+            if(fs.existsSync(fullPath)){
+                emptyCheck = checkEmptyFile(fullPath)
+            }
+
+            if(emptyCheck){
+                fs.writeFile(fullPath, err,(err)=>{
+                    if(err) { console.error(err); return}
+                     return;
+                });
+            }else{
+               fs.appendFile(fullPath, '\n\r', (err)=>{
+                if(err) { console.error(err); return}
+                 return;
+               })
+               fs.appendFile(fullPath, err, (err)=>{
+                if(err) { console.error(err); return}
+                 return;
+               })
+            }
         }
     }
     

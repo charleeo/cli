@@ -43,5 +43,7 @@ module.exports = {
   EMAIL_USER: process.env.EMAIL_USER,
   EMAIL_PASSWORD: process.env.EMAIL_PASSWORD,
   EMAIL_PORT:process.env.EMAIL_PORT,
-  EMAIL_HOST: process.env.EMAIL_HOST
+  EMAIL_HOST: process.env.EMAIL_HOST,
+  HOME_URL: process.env.HOME_URL,
+  SECURE: process.env.NODE_ENV ="production"?true:false
 };

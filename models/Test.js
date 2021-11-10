@@ -7,15 +7,6 @@ class Test extends BaseModel{
         this.model = "users"
         this.primaryKey = "id"
     }
-
-    // getFields(fields){
-    //     return{
-    //         name:  fields.name,
-    //         emil:  fields.email,
-    //         password:  fields.password,
-    //         role_id:  fields.role_id
-    //     }
-    // }
   
 }
 module.exports = Test

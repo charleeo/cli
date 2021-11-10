@@ -1,3 +1,4 @@
+const { object } = require('joi')
 const connection = require('../config/raw_connection')
 const Query = require('../queries/Queries')
 
@@ -35,12 +36,12 @@ class BaseModel{
      * @param {*} columns 
      * @returns A single if condtion is met and null if condition is n ot met
      */
-    async  findOne(column, firstCondition,  columns=["*"])
+    async  findOne(column={}, columns=["*"])
     {
         try {
             const [row,fields] = await this.mysql.query(
-                Query.findOne(this.model,columns, column),
-                [firstCondition]
+                Query.findOne(this.model,columns, Object.keys(column)),
+                [Object.values(column)]
                 )
            return row;
         } catch (err) {

@@ -1,4 +1,5 @@
 
+const LogUtils = require('../../logutils')
 const logUtils = require('../../logutils')
 const Role = require('../../models/role')
 const RoleObject = new Role()
@@ -14,16 +15,20 @@ const RoleController ={
         const {role_name} = req.body
 
         try {
-
+            const [role] = await RoleObject.findOne({role_name})
+    
             if(!role_name){
                  message = "Role name field is require"
-            }else{
+            }else if(role){
+              message = `There is role with this name ${role_name}`
+            }
+            else{
                 const role  = await RoleObject.create(
                     {
                         'role_name' :role_name
                     }
                 )
-                console.log(role)
+                
                 if(role.length >0){
                     message="Role Created"
                     responseData = role
@@ -39,7 +44,9 @@ const RoleController ={
         }catch (err) {
             message = "There  is a server error"
             statusCode = 500
-            error = err.message 
+            res.status(statusCode)
+            error = new Error(err)
+            LogUtils.logErrors(err)
         }
     
         logUtils.logData(error? error:responseData,req,res,message,statusCode,status)

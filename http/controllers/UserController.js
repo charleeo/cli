@@ -3,11 +3,13 @@ const jwt = require('jsonwebtoken');
 const Joi = require('joi')
 const secrete = require('../../config/config').jwt_secrete
 const port = require('../../config/config').PORT
-const mailObject = require('../../helpers/helpers')
+const home_url = require('../../config/config').HOME_URL
+const {getCurrentDate,sendMail} = require('../../helpers/helpers')
 const logUtils = require('../../logutils')
 const User = require('../../models/User')
 
 const {emailVerificationObject,forgotPasswordObjects }  = require( '../../helpers/mailObjects');
+const LogUtils = require('../../logutils');
 const UserObject = new User()
 
 const {text,html,subject} = emailVerificationObject
@@ -124,9 +126,9 @@ const UserController ={
       email: Joi.string() .email({ minDomainSegments: 2, tlds: { allow: ['com', 'net','info','ng'] } }).required()
   })
   try {
-      const {error,value}= schema.validate({ name,email,password});
+      const {error}= schema.validate({ name,email,password});
       
-      const checkUser = await UserObject.findOne("email",email);
+      const checkUser = await UserObject.findOne({email});
     
       if(error){
             message = error.details[0].message
@@ -139,7 +141,8 @@ const UserController ={
         }else{
         const salt = await bcryptjs.genSalt(10);
         const hash= await bcryptjs.hash(password, salt);
-        const user = { name, email, password: hash, role_id}
+        const date = getCurrentDate()
+        const user = { name, email, password: hash, role_id, createdAt:date,updatedAt:date}
         result =  await UserObject.create(user)
         if(result){
             responseData = result
@@ -151,14 +154,16 @@ const UserController ={
     } catch (err) {
         message = "There  is a server error"
         statusCode = 500
+        res.status(statusCode)
+        LogUtils.logErrors(err)
         error = err.message 
     }
     logUtils.logData(error? error:responseData,req,res,message,statusCode,status)
     const token = jwt.sign({email}, secrete,{expiresIn:"2days"})
-    const url = `http://127.0.0.1:${port}/user/verify-account/${email}/${token}`
+    const url = `${home_url}${port}/user/verify-account/${email}/${token}`
     res.status(statusCode).json({ status, responseData, message })
     /**Send mail to registered users  */
-    if(result) await mailObject.sendMail(email,url,subject,text,html)
+    if(result) await sendMail(email,url,subject,text,html)
    },
 
 
@@ -169,28 +174,26 @@ const UserController ={
     let message = ""
     error = null
       const {email,password}= req.body;
-      try{  
-          body('email').isEmail().normalizeEmail()
-          body('password').not().isEmpty()    
-    //   if(!email || !password){
-    //        stat=400
-    //        message= "Please ensure that all fields are filled"
-    //   }
+      try{    
+      if(!email){
+           stat=400
+           message= "Email Field is required"
+           stat=400
+        }else if(!req.body.password){
+          stat=400
+          message= "Password field is required"
 
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return res.status(400).json({ errors: errors.array() });
-    }
+      }else{
 
-      const [user] = await UserObject.findOne('email',email);
+      const [user]= await UserObject.findOne({email});
      
       if(!user){
-          statusCode =400
+          statusCode =200
           message="Invalid credential ";
       } else{
-
           const validPassword = await bcryptjs.compare(password, user.password); 
           if(!validPassword){
+          res.status(300).json(user.password)
               statusCode=400
               message="Invalid credentials provided"
          }
@@ -204,12 +207,13 @@ const UserController ={
             statusCode= statusCode 
          }
       } 
-      
+    }
       }catch(err){
           statusCode= 500
-          error=err.message
+          error=err.stack
           message="There is a server error"
-          console.log(err)
+          res.status(statusCode)
+          LogUtils.logErrors(err)
       }
       logUtils.logData(error? error:responseData,req,res,message,statusCode,status)
       res.status(statusCode).json({ status, responseData, message })
